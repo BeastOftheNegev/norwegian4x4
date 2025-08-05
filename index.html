@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4x4 Norwegian Running Timer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            transition: background-color 0.5s ease;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+
+        /* Stage-specific background colors */
+        .warmup { background-color: #28a745; }
+        .high-intensity { background-color: #dc3545; }
+        .rest { background-color: #007bff; }
+        .cooldown { background-color: #6c757d; }
+        .ready { background-color: #343a40; }
+
+        .app-header {
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 20px;
+            padding: 15px 20px;
+        }
+
+        .app-title {
+            font-size: 2.2rem;
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.4);
+            margin-bottom: 5px;
+            line-height: 1.2;
+        }
+
+        .app-subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+            padding: 0 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .stage-info {
+            margin-bottom: 30px;
+        }
+
+        .stage-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .stage-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+
+        .progress-info {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        .timer-display {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 30px 0;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.4);
+            font-variant-numeric: tabular-nums;
+            min-height: 1.2em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        .timeline-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .timeline-label {
+            width: 100%;
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            min-width: 100px;
+            touch-action: manipulation;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            min-width: 80px;
+            border-radius: 25px;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+
+        .btn-primary:hover {
+            background: white;
+        }
+
+        .workout-complete {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .celebration {
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            .app-title {
+                font-size: 1.8rem;
+            }
+            
+            .app-subtitle {
+                font-size: 0.9rem;
+            }
+            
+            .timer-display {
+                font-size: 3.5rem;
+                margin: 25px 0;
+            }
+            
+            .stage-title {
+                font-size: 1.4rem;
+            }
+            
+            .stage-subtitle {
+                font-size: 1rem;
+            }
+            
+            .btn {
+                padding: 10px 20px;
+                font-size: 0.95rem;
+                min-width: 90px;
+            }
+            
+            .btn-small {
+                padding: 8px 14px;
+                font-size: 0.85rem;
+                min-width: 70px;
+            }
+            
+            .controls {
+                gap: 12px;
+            }
+            
+            .timeline-controls {
+                gap: 8px;
+            }
+        }
+
+        @media (max-height: 600px) {
+            .timer-display {
+                margin: 20px 0;
+            }
+            
+            .stage-info {
+                margin-bottom: 20px;
+            }
+        }
+
+        /* Pulse animation for timer */
+        .pulse {
+            animation: pulse 1s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Flash effect for stage transitions */
+        .flash {
+            animation: flash 0.5s ease-in-out;
+        }
+
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body class="ready">
+    <div class="app-header">
+        <div class="app-title">4x4 Norwegian Running Protocol</div>
+        <div class="app-subtitle">High-Intensity Interval Training Timer</div>
+    </div>
+    
+    <div class="container">
+        <div class="stage-info">
+            <div class="stage-title" id="stageTitle">4x4 Norwegian Protocol</div>
+            <div class="stage-subtitle" id="stageSubtitle">Ready to start your workout</div>
+            <div class="progress-info" id="progressInfo">Total time: 38 minutes</div>
+        </div>
+
+        <div class="timer-display" id="timerDisplay">38:00</div>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="startBtn" onclick="startWorkout()">Start Workout</button>
+            <button class="btn" id="pauseBtn" onclick="togglePause()" style="display: none;">Pause</button>
+            <button class="btn" id="resetBtn" onclick="resetWorkout()">Reset</button>
+        </div>
+
+        <div class="timeline-controls" id="timelineControls" style="display: none;">
+            <div class="timeline-label">QA Timeline Navigation</div>
+            <button class="btn btn-small" onclick="skipToStage(-1)">← Prev Stage</button>
+            <button class="btn btn-small" onclick="skipToStage(1)">Next Stage →</button>
+            <button class="btn btn-small" onclick="skipTime(-30)">-30s</button>
+            <button class="btn btn-small" onclick="skipTime(30)">+30s</button>
+        </div>
+
+        <div class="workout-complete" id="completionMessage" style="display: none;">
+            <div class="celebration">🎉 Congratulations! 🎉</div>
+            <div>You've completed the 4x4 Norwegian running protocol!</div>
+            <div style="margin-top: 10px; opacity: 0.8;">Great job on your 38-minute workout!</div>
+        </div>
+    </div>
+
+    <script>
+        // Workout configuration
+        const WORKOUT_STAGES = [
+            { name: "Warm-up", duration: 10 * 60, type: "warmup", description: "Easy pace warm-up" },
+            { name: "Interval 1", duration: 4 * 60, type: "high-intensity", description: "High intensity" },
+            { name: "Rest 1", duration: 3 * 60, type: "rest", description: "Active recovery" },
+            { name: "Interval 2", duration: 4 * 60, type: "high-intensity", description: "High intensity" },
+            { name: "Rest 2", duration: 3 * 60, type: "rest", description: "Active recovery" },
+            { name: "Interval 3", duration: 4 * 60, type: "high-intensity", description: "High intensity" },
+            { name: "Rest 3", duration: 3 * 60, type: "rest", description: "Active recovery" },
+            { name: "Interval 4", duration: 4 * 60, type: "high-intensity", description: "High intensity" },
+            { name: "Cooldown", duration: 5 * 60, type: "cooldown", description: "Easy pace cooldown" }
+        ];
+
+        // Timer state
+        let currentStage = 0;
+        let timeRemaining = 0;
+        let totalTimeRemaining = WORKOUT_STAGES.reduce((sum, stage) => sum + stage.duration, 0);
+        let isRunning = false;
+        let isPaused = false;
+        let timerInterval = null;
+        let audioContext = null;
+
+        // DOM elements
+        const stageTitle = document.getElementById('stageTitle');
+        const stageSubtitle = document.getElementById('stageSubtitle');
+        const progressInfo = document.getElementById('progressInfo');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const completionMessage = document.getElementById('completionMessage');
+        const timelineControls = document.getElementById('timelineControls');
+
+        // Initialize audio context for sound cues
+        function initAudioContext() {
+            if (!audioContext) {
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.warn('Audio context not supported');
+                }
+            }
+        }
+
+        // Play sound cue for stage transitions
+        function playBeep(frequency = 800, duration = 800, type = 'sine') {
+            if (!audioContext) return;
+            
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                oscillator.type = type;
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration / 1000);
+            } catch (e) {
+                console.warn('Could not play beep:', e);
+            }
+        }
+
+        // Play different sound cues for different stage types
+        function playStageSound(stageType) {
+            switch (stageType) {
+                case 'warmup':
+                    playBeep(600, 1000); // Low, gentle tone - longer
+                    break;
+                case 'high-intensity':
+                    playBeep(1000, 800); // High, energetic tone - longer
+                    setTimeout(() => playBeep(1200, 600), 200); // Double beep - longer
+                    break;
+                case 'rest':
+                    playBeep(400, 1200); // Low, calming tone - longer
+                    break;
+                case 'cooldown':
+                    playBeep(500, 1500); // Gentle, longer tone - much longer
+                    break;
+                default:
+                    playBeep(800, 800);
+            }
+        }
+
+        // Format time as MM:SS
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        // Update the display with current stage and time
+        function updateDisplay() {
+            if (currentStage >= WORKOUT_STAGES.length) {
+                // Workout complete
+                stageTitle.textContent = "Workout Complete!";
+                stageSubtitle.textContent = "Congratulations!";
+                progressInfo.textContent = "You've finished the 4x4 Norwegian protocol";
+                timerDisplay.textContent = "00:00";
+                completionMessage.style.display = 'block';
+                document.body.className = 'cooldown';
+                return;
+            }
+
+            const stage = WORKOUT_STAGES[currentStage];
+            stageTitle.textContent = stage.name;
+            stageSubtitle.textContent = stage.description;
+            
+            const completedStages = currentStage;
+            const totalStages = WORKOUT_STAGES.length;
+            progressInfo.textContent = `Stage ${completedStages + 1} of ${totalStages} • Total remaining: ${formatTime(totalTimeRemaining)}`;
+            
+            timerDisplay.textContent = formatTime(timeRemaining);
+            document.body.className = stage.type;
+
+            // Add pulse effect when time is low
+            if (timeRemaining <= 10 && timeRemaining > 0) {
+                timerDisplay.classList.add('pulse');
+                setTimeout(() => timerDisplay.classList.remove('pulse'), 1000);
+            }
+        }
+
+        // Start the workout
+        function startWorkout() {
+            if (!isRunning) {
+                initAudioContext();
+                currentStage = 0;
+                timeRemaining = WORKOUT_STAGES[0].duration;
+                totalTimeRemaining = WORKOUT_STAGES.reduce((sum, stage) => sum + stage.duration, 0);
+                isRunning = true;
+                isPaused = false;
+                
+                startBtn.style.display = 'none';
+                pauseBtn.style.display = 'inline-block';
+                timelineControls.style.display = 'flex';
+                completionMessage.style.display = 'none';
+                
+                playStageSound(WORKOUT_STAGES[0].type);
+                document.body.classList.add('flash');
+                setTimeout(() => document.body.classList.remove('flash'), 500);
+                
+                updateDisplay();
+                startTimer();
+            }
+        }
+
+        // Toggle pause/resume
+        function togglePause() {
+            if (!isRunning) return;
+            
+            isPaused = !isPaused;
+            pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
+            
+            if (isPaused) {
+                clearInterval(timerInterval);
+            } else {
+                startTimer();
+            }
+        }
+
+        // Reset the workout
+        function resetWorkout() {
+            isRunning = false;
+            isPaused = false;
+            currentStage = 0;
+            timeRemaining = 0;
+            totalTimeRemaining = WORKOUT_STAGES.reduce((sum, stage) => sum + stage.duration, 0);
+            
+            clearInterval(timerInterval);
+            
+            startBtn.style.display = 'inline-block';
+            pauseBtn.style.display = 'none';
+            pauseBtn.textContent = 'Pause';
+            timelineControls.style.display = 'none';
+            completionMessage.style.display = 'none';
+            
+            stageTitle.textContent = 'Ready to Start';
+            stageSubtitle.textContent = 'Ready to start your workout';
+            progressInfo.textContent = 'Total time: 38 minutes';
+            timerDisplay.textContent = '38:00';
+            document.body.className = 'ready';
+        }
+
+        // Main timer function
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if (isPaused) return;
+                
+                timeRemaining--;
+                totalTimeRemaining--;
+                
+                updateDisplay();
+                
+                // Check if current stage is complete
+                if (timeRemaining <= 0) {
+                    currentStage++;
+                    
+                    // Check if workout is complete
+                    if (currentStage >= WORKOUT_STAGES.length) {
+                        clearInterval(timerInterval);
+                        isRunning = false;
+                        startBtn.style.display = 'inline-block';
+                        pauseBtn.style.display = 'none';
+                        timelineControls.style.display = 'none';
+                        
+                        // Play completion sound sequence - longer sounds
+                        playBeep(800, 800);
+                        setTimeout(() => playBeep(1000, 800), 600);
+                        setTimeout(() => playBeep(1200, 1200), 1200);
+                        
+                        updateDisplay();
+                        return;
+                    }
+                    
+                    // Move to next stage
+                    timeRemaining = WORKOUT_STAGES[currentStage].duration;
+                    playStageSound(WORKOUT_STAGES[currentStage].type);
+                    
+                    // Flash effect for stage transition
+                    document.body.classList.add('flash');
+                    setTimeout(() => document.body.classList.remove('flash'), 500);
+                    
+                    updateDisplay();
+                }
+            }, 1000);
+        }
+
+        // Prevent screen from sleeping (if supported)
+        let wakeLock = null;
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) {
+                console.warn('Wake lock not supported or failed:', err);
+            }
+        }
+
+        // Request wake lock when starting workout
+        function enhancedStartWorkout() {
+            requestWakeLock();
+            startWorkout();
+        }
+
+        // Replace the start button onclick
+        startBtn.onclick = enhancedStartWorkout;
+
+        // Timeline navigation functions for QA
+        function skipToStage(direction) {
+            if (!isRunning) return;
+            
+            const newStage = currentStage + direction;
+            if (newStage >= 0 && newStage < WORKOUT_STAGES.length) {
+                currentStage = newStage;
+                timeRemaining = WORKOUT_STAGES[currentStage].duration;
+                
+                // Recalculate total time remaining
+                totalTimeRemaining = 0;
+                for (let i = currentStage; i < WORKOUT_STAGES.length; i++) {
+                    totalTimeRemaining += i === currentStage ? timeRemaining : WORKOUT_STAGES[i].duration;
+                }
+                
+                playStageSound(WORKOUT_STAGES[currentStage].type);
+                document.body.classList.add('flash');
+                setTimeout(() => document.body.classList.remove('flash'), 500);
+                updateDisplay();
+            }
+        }
+
+        function skipTime(seconds) {
+            if (!isRunning) return;
+            
+            timeRemaining = Math.max(1, timeRemaining + seconds);
+            totalTimeRemaining = Math.max(1, totalTimeRemaining + seconds);
+            
+            // If we've exceeded stage duration, cap it
+            if (timeRemaining > WORKOUT_STAGES[currentStage].duration) {
+                const excess = timeRemaining - WORKOUT_STAGES[currentStage].duration;
+                timeRemaining = WORKOUT_STAGES[currentStage].duration;
+                totalTimeRemaining -= excess;
+            }
+            
+            updateDisplay();
+        }
+
+        // Handle visibility change to maintain wake lock
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible' && isRunning) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                } catch (err) {
+                    console.warn('Failed to re-acquire wake lock:', err);
+                }
+            }
+        });
+
+        // Initialize display
+        updateDisplay();
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (!isRunning) {
+                    startWorkout();
+                } else {
+                    togglePause();
+                }
+            } else if (e.code === 'Escape') {
+                resetWorkout();
+            }
+        });
+
+        // Add touch feedback for mobile
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('touchstart', () => {
+                btn.style.transform = 'scale(0.95)';
+            });
+            
+            btn.addEventListener('touchend', () => {
+                setTimeout(() => {
+                    btn.style.transform = '';
+                }, 100);
+            });
+        });
+    </script>
+</body>
+</html>
